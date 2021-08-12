@@ -1,1 +1,1 @@
-# typescript-example
+# TypeORM Practice
