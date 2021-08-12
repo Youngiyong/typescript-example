@@ -40,11 +40,11 @@ provider:
   endpointType: REGIONAL
   vpc:
     securityGroupIds:
-      - sg-013fada63bf92d7a #vpc
-      - sg-02113118f408f #development
+      - sg-013fa3da63b2f92d7a #vpc
+      - sg-0211311ff8f408f #development
     subnetIds:
-      - subnet-0df342131026fce2c #public-subnet
-      - subnet-0191012335392eccf #public-subnet
+      - subnet-0df3423131026fce2c #public-subnet
+      - subnet-019d1012335392eccf #public-subnet
   iam:
     role:
       name: ${self:custom.SERVICE_NAME}
@@ -65,7 +65,6 @@ provider:
           Resource: "*"
       tags:
         key: webhook-service
-    # deploymentRole: arn:aws:iam::299665028667:role/LastorderDeployer
   apiGateway:
     # restApiId: ${self:custom.SERVICE_NAME}
     resourcePolicy: # Private REST API doesn't have a resource policy attached to i
