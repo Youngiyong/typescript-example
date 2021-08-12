@@ -1,0 +1,8 @@
+node_modules
+data
+validates
+.serverless
+yarn.lock
+.git
+.serverless
+.build
