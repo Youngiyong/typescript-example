@@ -1,5 +1,5 @@
 import { Handler, Context, Callback } from "aws-lambda";
-import { findListByProjectId, findListByTagId, IWebhookFromClickup, requestDoorayToCreateTask, requestClickupGetTask, requestClickupUpdateWebHook, requestDoorayGetTag, findListByMemberId } from "./model";
+import { findListByProjectId, findListByTagId, IWebhookFromClickup, IRequestDoorayCreateTask, requestClickupGetTasks, requestDoorayToCreateTask, requestClickupGetTask, findListByMemberId, requestDoorayGetTask } from "../models";
 
 export const run: Handler = async (event, context: Context, callback: Callback) => {
 
@@ -9,97 +9,110 @@ export const run: Handler = async (event, context: Context, callback: Callback) 
 	context.callbackWaitsForEmptyEventLoop = false;
 
 	// -------------------------------------------------------------------
-
-	console.log("incomming hook", event.body);
-
-	let clickupWebhook: IWebhookFromClickup = JSON.parse(event.body);
+	console.log("incomming hook from clickup", event.body);
 	
-	//taskCreated
-	let clickupEvent = clickupWebhook.event
+	let clickupWebhook: IWebhookFromClickup = event.body;
 
-	// if(clickupEvent=="taskCreated"){
-	// 	let taskData = await requestClickupGetTask(clickupEvent.task_id)
-	// }
+	// // f7242db7-4ff4-4400-85d8-14b21dd03890
+	// //ClickUp WebHook Dooray taskCreated
+	if(clickupWebhook.event=="taskCreated"){
+		let task = await requestClickupGetTask(clickupWebhook.task_id)
+		
+		const customFields = task.data.custom_fields
+		const customId = "f7242db7-4ff4-4400-85d8-14b21dd03890"
+		let postNumber = null
+
+		// f7242db7-4ff4-4400-85d8-14b21dd03890
+		for(var i=0; i<customFields.length; i++){
+			if(customFields[i].id==customId)
+				postNumber = customFields[i].value
+		}
+		const listNumber = task.data.list.id
+		const projectId = findListByProjectId(listNumber)
 	
-	let task = await requestClickupGetTask('test')
+		if(postNumber){
+			let doorayTask = await requestDoorayGetTask(projectId, postNumber)
+			if(doorayTask){
+				console.log("Dooray Task Alreaday Exist")
+			}
+		}
+		else{
+			console.log("Dorray Task Create")
+			//  assignees = [ { id: 7823814, username: '윤기용' , .....} ]
+			let taskAssignees = ""
+			if (task.data.assignees.length>0){
+				taskAssignees = task.data.assignees[0].id
+			}
 
-	// console.log("=================>1")
-	// console.log(taskData.data.assignees)
-	// //
-	// console.log("=================>2")
-	// console.log(taskData.data.watchers)
-	// console.log("+==================3")
-	// console.log(taskData.data.custom_fields)
-	// console.log(taskData.data.custom_fields[0].type_config.options)
-
-	//  assignees = [ { id: 7823814, username: '윤기용' , .....} ]
-	let taskAssignees = task.data.assignees[0].id
-
-	//type_config.options = [ { id: 'b9400e46-3ea8-404c-a83c-a611378d831d', name: '프론트-AOS'}, ......]
-	const deployTargetNumber = task.data.custom_fields[0].value
-	const deployTarget = task.data.custom_fields[0].type_config.options[deployTargetNumber]
-
-	// status: {	id: 'sc28922731_wkZIJ84V', status: '배포 계획/버저닝',
-	// const taskStatus = [ task.data.status.id, task.data.status.status ]
+			//type_config.options = [ { id: 'b9400e46-3ea8-404c-a83c-a611378d831d', name: '프론트-AOS'}, ......]
+			const deployTargetNumber = task.data.custom_fields[0].value
+			const deployTarget = task.data.custom_fields[0].type_config.options[deployTargetNumber]
 	
-	const listNumber = task.data.list.id
+			const listNumber = task.data.list.id
+			const projectId = findListByProjectId(listNumber)
 
-	const projectId = findListByProjectId(listNumber)
+			// console.log(deployTarget)
+			// console.log(taskStatus)
+			// console.log(listNumber)
+			// console.log(projectId)
+			// console.log(task)
+	
+			//ClickUp Task Assign is True Assign Add
+			const assignees = findListByMemberId(taskAssignees.toString())
 
-	// console.log(deployTarget)
-	// console.log(taskStatus)
-	// console.log(listNumber)
-	// console.log(projectId)
-	// console.log(task)
+			//Dooray Request 
+			let request: IRequestDoorayCreateTask = assignees ? {
+				parentPostId: "1", 
+				users: {
+					to: [{                                    /* 업무 담당자 목록 */
+						type: "member",
+						member: {
+							organizationMemberId: assignees
+						}
+					}],
+				// cc: [{                                    /* 업무 참조자 목록 */
+				// 	type: "member",
+				// 	member: {
+				// 		organizationMemberId: "2393504394989379018"
+				// 	}
+				// }]
+				},
+				subject: task.data.name,
+				body: {
+					mimeType: "text/html",                    /* text/html text/x-markdown */
+					content: ""             /* 업무 본문 */
+				},
+				dueDateFlag: true,
+				milestoneId: "1",
+				priority: "none",
+				tagIds: []
+			}  : {
+				parentPostId: "1", 
+				subject: task.data.name,
+				body: {
+					mimeType: "text/html",                    /* text/html text/x-markdown */
+					content: ""             /* 업무 본문 */
+				},
+				dueDateFlag: true,
+				milestoneId: "1",
+				priority: "none",
+				tagIds: []
+			}
+		
 
-	const assignees = findListByMemberId(taskAssignees.toString())
-	//ClickUp Task Assign is True Assign Add
-	let request: IRequestDoorayCreateTask = assignees ? {
-		parentPostId: "1", 
-		users: {
-			to: [{                                    /* 업무 담당자 목록 */
-				type: "member",
-				member: {
-					organizationMemberId: assignees
-				}
-			}],
-			// cc: [{                                    /* 업무 참조자 목록 */
-			// 	type: "member",
-			// 	member: {
-			// 		organizationMemberId: "2393504394989379018"
-			// 	}
-			// }]
-		},
-		subject: task.data.name,
-		body: {
-			mimeType: "text/html",                    /* text/html text/x-markdown */
-			content: ""             /* 업무 본문 */
-		},
-		dueDateFlag: true,
-		milestoneId: "1",
-		priority: "none",
-		tagIds: []
-	}  : {
-		parentPostId: "1", 
-		subject: task.data.name,
-		body: {
-			mimeType: "text/html",                    /* text/html text/x-markdown */
-			content: ""             /* 업무 본문 */
-		},
-		dueDateFlag: true,
-		milestoneId: "1",
-		priority: "none",
-		tagIds: []
+			if(deployTarget){
+				let tagId = findListByTagId(deployTarget.id)
+				request.tagIds = tagId ? [ tagId ] : []
+			}
+
+			await requestDoorayToCreateTask(projectId, request)
+				.then(res => {
+					console.log("=================>1", res.data);
+				}).catch(err => {
+					console.log("=================>2", err);
+				});
+			callback(null);
+		}
 	}
-
-
-	if(deployTarget){
-		let tagId = findListByTagId(deployTarget.id)
-		request.tagIds = tagId ? [ tagId ] : []
-	}
-
-	await requestDoorayToCreateTask(projectId, request)
-
-
 
 };
