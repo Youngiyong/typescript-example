@@ -91,11 +91,26 @@ provider:
 
 functions:
   dooray2clickupSyncTask:
-    handler: src/WebHook/syncTask.run
-    description: "createser clickup task by dooray"
+    handler: src/dooray2clickup/syncTask.run
+    description: "create clickup task by dooray"
     events:
       - http:
-          path: /WebHook/sync-task/
+          path: /dooray2clickup/sync-task/
+          method: post
+          integration: lambda
+          request:
+            schemas:
+              application/json: request-create-task
+          cors:
+            origin: "*"
+            headers: "*"
+          private: false
+  clickup2dooraySyncTask:
+    handler: src/clickup2dooray/syncTask.run
+    description: "create dooray task by clickup"
+    events:
+      - http:
+          path: /clickup2dooray/sync-task/
           method: post
           integration: lambda
           request:

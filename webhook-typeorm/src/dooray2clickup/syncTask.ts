@@ -27,25 +27,41 @@ export const run: Handler = async (event, context: Context, callback: Callback) 
 			await requestClickupToDeleteTask(clickupContent.id)
 			console.log("ClickupTask Delete Complete")
 		}
-		const tag = clickupContent.tag
+		
+		const tag = clickupContent.tag ? [ clickupContent.tag ] : []
 		const description = getDoorayDescription(doorayWebhook) ? getDoorayDescription(doorayWebhook) : " "
-		const member = findListByMemberId(doorayWebhook.source.member.id) ? findListByMemberId(doorayWebhook.source.member.id) : "5987495"
+		const member = clickupContent.member ? findListByMemberId(clickupContent.member) : findListByMemberId(doorayWebhook.source.member.id)
 		const priority = findListByPriorityrId(doorayWebhook.post.priority) ? findListByPriorityrId(doorayWebhook.post.priority) : "none"
 		const listNumber = findListByProjectId(doorayWebhook.project.id);
 		let status;
-		console.log(doorayWebhook.post)
-		console.log(doorayWebhook.source)
+
 		if(listNumber=="28922731"){
 			status = "배포 계획/버저닝"
 		} else {
 			status = "TO DO"
 		}
 
-		let request: IRequestClickupCreateTask = {
+		let request: IRequestClickupCreateTask =  member ? {
 			name: doorayWebhook.post.subject,
 			description: description,
 			assignees: [ member ],
-			tags: [ tag ],
+			tags: tag,
+			status: status,
+			priority: priority,
+			// due_date: doorayWebhook.post.dueDate,
+			// due_date_time: doorayWebhook.post.dueDate,
+			// time_estimate?: number,
+			// start_date?: number,
+			// start_date_time?: number,
+			// notify_all?: number,
+			// parent?: null | number,
+			// links_to?: null | number,
+			check_required_custom_fields: true,
+			custom_fields: customFields
+		} : {
+			name: doorayWebhook.post.subject,
+			description: description,
+			tags: tag,
 			status: status,
 			priority: priority,
 			// due_date: doorayWebhook.post.dueDate,
@@ -60,8 +76,6 @@ export const run: Handler = async (event, context: Context, callback: Callback) 
 			custom_fields: customFields
 		}
 
-		
-	
 		console.log(request)
 
 		await requestClickupToCreateTask(listNumber, request)
@@ -75,12 +89,12 @@ export const run: Handler = async (event, context: Context, callback: Callback) 
 	}
 	
 	// TaskCommentCreate
-	if (doorayWebhook.webhookType=='postCommentCreated'){
+	else if (doorayWebhook.webhookType=='postCommentCreated'){
 
-		// console.log('indexof Dooray: ', doorayWebhook.comment.body.content.indexOf('From Dooray'), 'indexof Clikcup', doorayWebhook.comment.body.content.indexOf('From Clickup')))
-		if(doorayWebhook.comment.body.content.indexOf('From Dooray')==-1 && doorayWebhook.comment.body.content.indexOf('From Clickup')==-1){
-			console.log(doorayWebhook.comment)
-			console.log(doorayWebhook.comment.body)
+		// console.log(doorayWebhook.comment.body.content.lastIndexOf('From Dooray'))
+		// console.log(doorayWebhook.comment.body.content.lastIndexOf('From Clickup'))
+		if(doorayWebhook.comment.body.content.lastIndexOf('From Dooray')==-1 && doorayWebhook.comment.body.content.lastIndexOf('From Clickup')==-1){
+
 			const listNumber = findListByProjectId(doorayWebhook.project.id);
 			
 			//ClickUp All Task Get
@@ -92,7 +106,6 @@ export const run: Handler = async (event, context: Context, callback: Callback) 
 			const comment = doorayWebhook.comment.body.content ? doorayWebhook.comment.body.content : " "
 	
 			const member = findListByMemberId(doorayWebhook.source.member.id) ? findListByMemberId(doorayWebhook.source.member.id) : "5987495"
-			//'[@윤기용](dooray://2393445616658000086/members/3046321719599858766 "member")'
 		
 			let request: IRequestClickupCreateTaskComment = {
 				comment_text: comment + "\n" + " From Dooray",
