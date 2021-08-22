@@ -127,31 +127,5 @@ export const run: Handler = async (event, context: Context, callback: Callback) 
 	}
 
 
-	// // TaskDescriptionChanged
-	// if (doorayWebhook.webhookType=='postBodyChanged'){
-	
-	// 	const listNumber = findListByProjectId(doorayWebhook.project.id);
-
-	// 	//ClickUp All Task Get
-	// 	const clickupTasks = await requestClickupGetTasks(listNumber)
-	
-	// 	//DooraySubject == ClickUpSubject 비교해서 TaskNumber를 얻어온다.
-	// 	const taskNumber = getClickupTaskId(doorayWebhook, clickupTasks)
-
-	// 	let request: IRequestClickupCreateTask = {
-	// 		description: doorayWebhook.body.content
-	// 	}
-
-	// 	await requestClickupToUpdateTask(taskNumber, request)
-	// 		.then(res => {
-	// 			console.log("=================>1", res.data);
-	// 		})
-	// 		.catch(err => {
-	// 			console.log("=================>2", err);
-	// 		});
-	// 	callback(null);
-	// }
-
-
 	
 };
