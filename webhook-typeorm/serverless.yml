@@ -121,4 +121,18 @@ functions:
             headers: "*"
           private: false
 resources:
-  Description: WebHook Resource and Api
+  Description: WebHook 
+  Resources:
+    ClickupUserTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.SERVICE_NAME}
+        AttributeDefinitions:
+          - AttributeName: "id"
+            AttributeType: "S"
+        KeySchema:
+          - AttributeName: "id"
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
