@@ -1,4 +1,5 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToOne, ManyToOne } from "typeorm";
+import { Album } from "./Album";
 import { Author } from "./Author";
 import { PhotoMetadata } from "./PhotoMetaData";
 
